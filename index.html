@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>P2P Chat</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+</head>
+
+<body>
+    <div id="menu">
+        <p>Your ID:</p>
+        <p id="uuid"></p>
+        <input type="text" id="peer-id-input" placeholder="Peer ID" />
+        <button onclick="connectPeer()">Connect</button>
+    </div>
+
+    <div id="chat">
+        <div id="chat-box"></div>
+        <input type="text" id="message" placeholder="Type a message" />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const peer = new Peer();
+        let otheruserId;
+        let dataConnection1;
+        let dataConnection; // Data channel for chatting
+
+        peer.on("open", function (id) {
+            document.getElementById("uuid").textContent = id;
+            console.log(`my id is ${id}`)
+        });
+
+        let sendFunc;
+
+        dataConnection1 = peer.on('connection', function (conn) {
+            console.log(conn)
+            console.log(conn.peer)
+            otheruserId = conn.peer
+            alert(`${otheruserId} is trying to connect with you`)
+            conn.on("open", function () {
+                // alert("Data connection opened. You are now connected with " + peerId);
+            });
+
+            conn.on("data", (data) => {
+                console.log(data);
+                appendMessage(data, "received");
+            });
+
+            sendFunc = (data1) => {
+                conn.send(data1)
+            }
+
+        });
+
+
+        function connectPeer() {
+            const peerId = document.getElementById("peer-id-input").value;
+            dataConnection = peer.connect(peerId);
+
+
+            dataConnection.on("open", function () {
+                // alert("Data connection opened. You are now connected with " + peerId);
+            });
+
+            dataConnection.on("data", (data) => {
+                console.log(data);
+                appendMessage(data, "received");
+            });
+
+        }
+
+        // // Function to send a chat message
+        function sendMessage() {
+            const message = document.getElementById("message").value;
+            if (dataConnection && message) {
+                dataConnection.send(message);
+                appendMessage(message, "sent");
+                document.getElementById("message").value = "";
+            } else {
+                sendFunc(message)
+                appendMessage(message, "sent");
+                document.getElementById("message").value = "";
+            }
+        }
+
+        function appendMessage(message, type) {
+            const chatBox = document.getElementById("chat-box");
+            const messageDiv = document.createElement("div");
+            messageDiv.textContent = `[${type}] ${message}`;
+            chatBox.appendChild(messageDiv);
+        }
+    </script>
+</body>
+
+</html>
